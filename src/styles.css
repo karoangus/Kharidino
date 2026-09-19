@@ -1,0 +1,1599 @@
+/* خریدینو — استایل پایه، موبایل‌فرست، RTL */
+
+/* ---------- تم‌ها (متغیرهای رنگ) ---------- */
+:root {
+  --bg: #f4f6f8;
+  --surface: #ffffff;
+  --surface-2: #edf0f3;
+  --text: #171c21;
+  --text-2: #5c6670;
+  --text-3: #98a2ac;
+  --line: #e2e7eb;
+  --accent: #16a34a;
+  --accent-soft: #e2f5e9;
+  --accent-text: #ffffff;
+  --danger: #dc2626;
+  --danger-soft: #fbeaea;
+  --radius: 16px;
+  --shadow: 0 1px 2px rgba(16, 24, 32, 0.05), 0 3px 10px rgba(16, 24, 32, 0.05);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --bg: #101318;
+  --surface: #171b21;
+  --surface-2: #212731;
+  --text: #edf0f3;
+  --text-2: #a6afba;
+  --text-3: #6d7681;
+  --line: #29303a;
+  --accent: #37d179;
+  --accent-soft: #15341f;
+  --accent-text: #06130a;
+  --danger: #f47c7c;
+  --danger-soft: #38191b;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 4px 14px rgba(0, 0, 0, 0.3);
+  color-scheme: dark;
+}
+
+[data-theme='neon'] {
+  --bg: #120e1d;
+  --surface: #1a1429;
+  --surface-2: #251c3a;
+  --text: #f0ecfa;
+  --text-2: #b3a8cf;
+  --text-3: #7d719a;
+  --line: #2f2449;
+  --accent: #c084fc;
+  --accent-soft: #2c1f47;
+  --accent-text: #170d2b;
+  --danger: #fb7185;
+  --danger-soft: #391824;
+  --shadow: 0 0 0 1px rgba(192, 132, 252, 0.07), 0 4px 18px rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+[data-theme='amoled'] {
+  --bg: #000000;
+  --surface: #0c0c0e;
+  --surface-2: #16161a;
+  --text: #ececec;
+  --text-2: #a3a3a8;
+  --text-3: #6b6b70;
+  --line: #212127;
+  --accent: #4ade80;
+  --accent-soft: #0d2415;
+  --accent-text: #04150a;
+  --danger: #f47c7c;
+  --danger-soft: #2a1113;
+  --shadow: none;
+  color-scheme: dark;
+}
+
+/* ---------- پایه ---------- */
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+}
+
+html {
+  font-size: 16px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  line-height: 1.55;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+button,
+input,
+select {
+  font-family: inherit;
+  touch-action: manipulation;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.app {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100vh;
+  min-height: 100dvh;
+  position: relative;
+  background: var(--bg);
+}
+
+@media (min-width: 600px) {
+  body {
+    background: color-mix(in srgb, var(--bg) 92%, var(--text) 4%);
+  }
+  .app {
+    border-inline: 1px solid var(--line);
+  }
+}
+
+/* ---------- هدر صفحات ---------- */
+.app-header {
+  padding: calc(14px + env(safe-area-inset-top)) 16px 4px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.brand-logo {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: var(--accent-soft);
+  display: grid;
+  place-items: center;
+  font-size: 24px;
+  flex: none;
+}
+
+.brand-logo.lg {
+  width: 54px;
+  height: 54px;
+  font-size: 28px;
+}
+
+.brand-text h1 {
+  margin: 0;
+  font-size: 20px;
+  letter-spacing: -0.2px;
+}
+
+.brand-text p {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.screen {
+  padding: 10px 16px calc(96px + env(safe-area-inset-bottom));
+}
+
+/* ---------- دکمه‌ها ---------- */
+.btn {
+  border: none;
+  border-radius: 12px;
+  padding: 12px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.08s ease, background 0.15s ease, opacity 0.15s ease;
+  color: var(--text);
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.btn.danger {
+  background: var(--danger);
+  color: #fff;
+}
+
+.btn.ghost {
+  background: var(--surface-2);
+}
+
+.btn.ghost.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+.btn.block {
+  width: 100%;
+}
+
+.btn.sm {
+  padding: 8px 12px;
+  font-size: 12.5px;
+  border-radius: 10px;
+}
+
+.btn-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-row .btn {
+  flex: 1;
+  padding: 11px 10px;
+  font-size: 13px;
+}
+
+.icon-btn {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  color: var(--text-2);
+  cursor: pointer;
+  flex: none;
+}
+
+.icon-btn:active {
+  background: var(--surface-2);
+}
+
+.icon-btn.sm {
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+}
+
+/* ---------- فرم‌ها ---------- */
+.field {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.field > span {
+  display: block;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+
+.field input,
+.field select {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  padding: 11px 12px;
+  font-size: 16px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.emoji-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.emoji-row::-webkit-scrollbar {
+  display: none;
+}
+
+.emoji-pick {
+  min-width: 42px;
+  height: 42px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--surface-2);
+  font-size: 20px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+}
+
+.emoji-pick.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.hint {
+  font-size: 12px;
+  color: var(--text-2);
+  line-height: 1.9;
+  margin: 10px 0 0;
+}
+
+.hint-inline {
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin: 2px 0 12px;
+  line-height: 1.8;
+}
+
+.sheet-actions {
+  margin-top: 6px;
+}
+
+/* ---------- جست‌وجو ---------- */
+.search-wrap {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 38px;
+  padding-inline-start: 40px;
+  border-radius: 14px;
+  background: var(--surface-2);
+  border: 1.5px solid transparent;
+  font-size: 16px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.sw-icon {
+  position: absolute;
+  inset-inline-start: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.search-wrap .icon-btn.sm {
+  position: absolute;
+  inset-inline-end: 5px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+/* ---------- چیپ‌ها ---------- */
+.chip-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0 8px;
+  scrollbar-width: none;
+}
+
+.chip-row::-webkit-scrollbar {
+  display: none;
+}
+
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 13px;
+  border-radius: 999px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.chip:active {
+  background: var(--surface-2);
+}
+
+.chip.on {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.chip-x {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+/* ---------- فهرست کارت‌های لیست (صفحه اصلی) ---------- */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: transform 0.08s ease;
+}
+
+.list-card:active {
+  transform: scale(0.985);
+}
+
+.lc-emoji {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+  background: var(--surface-2);
+  display: grid;
+  place-items: center;
+  font-size: 23px;
+  flex: none;
+}
+
+.lc-main {
+  flex: 1;
+  min-width: 0;
+}
+
+.lc-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.lc-name {
+  font-size: 15px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lc-pct {
+  font-size: 12px;
+  color: var(--accent);
+  font-weight: 700;
+  flex: none;
+}
+
+.lc-meta {
+  font-size: 12px;
+  color: var(--text-2);
+  margin: 2px 0 8px;
+}
+
+.lc-time {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 7px;
+}
+
+.lc-menu {
+  align-self: flex-start;
+  margin-top: -4px;
+}
+
+/* ---------- نوار پیشرفت ---------- */
+.progress {
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.progress i {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.25s ease;
+}
+
+.progress.thin {
+  height: 5px;
+}
+
+/* ---------- صفحهٔ جزئیات لیست ---------- */
+.detail {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.detail-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+  background: var(--bg);
+}
+
+.dh-title {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  background: none;
+  border: none;
+  color: var(--text);
+  padding: 4px 6px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.dh-title b {
+  font-size: 15.5px;
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dh-static {
+  font-size: 15.5px;
+  flex: 1;
+}
+
+.detail-progress {
+  padding: 4px 16px 12px;
+}
+
+.dp-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12.5px;
+  color: var(--text-2);
+  margin-bottom: 7px;
+  gap: 8px;
+}
+
+.dp-row b {
+  color: var(--accent);
+  font-size: 13px;
+}
+
+.dp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  color: var(--text-2);
+  margin-top: 9px;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.dp-toggle input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  margin: 0;
+}
+
+.detail-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  padding: 0 16px calc(130px + env(safe-area-inset-bottom));
+}
+
+/* ---------- کارت کالا ---------- */
+.item-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 12px;
+  box-shadow: var(--shadow);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  transition: opacity 0.15s ease, transform 0.08s ease;
+}
+
+.item-card:active {
+  transform: scale(0.99);
+}
+
+.item-card.done {
+  opacity: 0.55;
+  background: var(--surface-2);
+  box-shadow: none;
+}
+
+.item-card.done .ic-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--text-3);
+}
+
+.item-card.done .ic-emoji {
+  filter: grayscale(1);
+}
+
+.check {
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  border: 2px solid var(--text-3);
+  background: transparent;
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: transparent;
+  flex: none;
+  cursor: pointer;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
+  padding: 0;
+}
+
+.check.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.ic-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.ic-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.ic-emoji {
+  font-size: 18px;
+  flex: none;
+}
+
+.ic-name {
+  font-weight: 700;
+  font-size: 14.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ic-sub {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin-top: 3px;
+  font-size: 11.5px;
+  color: var(--text-2);
+}
+
+.ic-note {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ic-price {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ---------- استپر تعداد ---------- */
+.stepper {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 2px;
+  flex: none;
+}
+
+.st-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.st-btn:active {
+  background: var(--line);
+}
+
+.st-val {
+  min-width: 36px;
+  height: 34px;
+  font-size: 14px;
+  font-weight: 700;
+  background: var(--surface);
+  border: none;
+  border-radius: 10px;
+  color: var(--text);
+  cursor: pointer;
+  padding: 0 6px;
+}
+
+.st-input {
+  width: 52px;
+  height: 34px;
+  text-align: center;
+  background: var(--surface);
+  border: 1.5px solid var(--accent);
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text);
+  padding: 0;
+  outline: none;
+}
+
+/* ---------- نوار جمع ---------- */
+.summary-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border-top: 1px solid var(--line);
+  padding: 10px 16px calc(12px + env(safe-area-inset-bottom));
+  z-index: 10;
+}
+
+@media (min-width: 600px) {
+  .summary-bar {
+    border-inline: 1px solid var(--line);
+  }
+}
+
+.sb-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.sb-label {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.sb-value {
+  font-size: 16px;
+  color: var(--accent);
+}
+
+.sb-note {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-top: 2px;
+}
+
+/* ---------- دکمهٔ شناور ---------- */
+.fab {
+  position: fixed;
+  bottom: calc(90px + env(safe-area-inset-bottom));
+  left: max(16px, calc(50% - 264px));
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 30px;
+  font-weight: 500;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  z-index: 15;
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 38%, transparent);
+  transition: transform 0.08s ease;
+}
+
+.fab:active {
+  transform: scale(0.94);
+}
+
+/* ---------- ناوبری پایین ---------- */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  background: color-mix(in srgb, var(--surface) 90%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--line);
+  padding: 5px 10px calc(6px + env(safe-area-inset-bottom));
+  z-index: 20;
+}
+
+@media (min-width: 600px) {
+  .bottom-nav {
+    border-inline: 1px solid var(--line);
+  }
+}
+
+.bn-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 7px 0 5px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 11px;
+  cursor: pointer;
+  border-radius: 12px;
+  transition: color 0.15s ease;
+}
+
+.bn-icon {
+  font-size: 20px;
+  line-height: 1.2;
+}
+
+.bn-tab.active {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ---------- شیت ---------- */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.45);
+  z-index: 40;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fadeIn 0.15s ease;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  max-height: 90dvh;
+  display: flex;
+  flex-direction: column;
+  animation: sheetUp 0.2s ease;
+}
+
+@keyframes sheetUp {
+  from {
+    transform: translateY(40px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px 8px;
+  border-top: 1px solid transparent;
+}
+
+.sheet-head h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  padding: 4px 16px calc(18px + env(safe-area-inset-bottom));
+  flex: 1;
+}
+
+.sheet-hint {
+  font-size: 11.5px;
+  color: var(--text-3);
+  text-align: center;
+  margin: 14px 0 0;
+}
+
+/* ---------- دیالوگ ---------- */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.5);
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  animation: fadeIn 0.12s ease;
+}
+
+.dialog {
+  background: var(--surface);
+  border-radius: 16px;
+  padding: 18px;
+  width: 100%;
+  max-width: 340px;
+  animation: pop 0.16s ease;
+  box-shadow: var(--shadow);
+}
+
+@keyframes pop {
+  from {
+    transform: scale(0.94);
+    opacity: 0.5;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.dialog h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.dialog p {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.9;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.dialog-actions .btn {
+  flex: 1;
+}
+
+/* ---------- توست ---------- */
+.toast {
+  position: fixed;
+  bottom: calc(96px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1c2128;
+  color: #fff;
+  padding: 10px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  z-index: 70;
+  max-width: min(90%, 520px);
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  animation: toastIn 0.18s ease;
+}
+
+@keyframes toastIn {
+  from {
+    transform: translateX(-50%) translateY(8px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+  }
+}
+
+/* ---------- حالت خالی ---------- */
+.empty {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--text-2);
+}
+
+.empty-icon {
+  font-size: 44px;
+  margin-bottom: 10px;
+}
+
+.empty b {
+  display: block;
+  color: var(--text);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.empty p {
+  font-size: 13px;
+  line-height: 1.9;
+  margin: 0 0 14px;
+}
+
+.mini-empty {
+  font-size: 12.5px;
+  color: var(--text-2);
+  background: var(--surface-2);
+  border-radius: 12px;
+  padding: 12px 14px;
+  line-height: 1.9;
+}
+
+/* ---------- منوی عملیات ---------- */
+.menu-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 13px 10px;
+  border-radius: 12px;
+  background: transparent;
+  border: none;
+  font-size: 14.5px;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  text-align: start;
+  margin-bottom: 2px;
+}
+
+.menu-row:active {
+  background: var(--surface-2);
+}
+
+.menu-row.danger {
+  color: var(--danger);
+  background: var(--danger-soft);
+}
+
+/* ---------- نتایج جست‌وجو ---------- */
+.res-head {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-2);
+  margin: 12px 0 8px;
+}
+
+.res-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.res-row:active {
+  background: var(--surface-2);
+}
+
+.rr-emoji {
+  font-size: 20px;
+  flex: none;
+}
+
+.rr-name {
+  flex: 1;
+  font-weight: 500;
+  font-size: 14px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rr-star {
+  font-style: normal;
+  font-size: 12px;
+}
+
+.rr-unit {
+  font-size: 11px;
+  color: var(--text-3);
+  flex: none;
+}
+
+.rr-gear {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  cursor: pointer;
+  flex: none;
+}
+
+.rr-gear:active {
+  background: var(--surface-2);
+}
+
+.res-empty {
+  font-size: 12.5px;
+  color: var(--text-3);
+  padding: 6px 2px 10px;
+}
+
+.no-result {
+  padding: 8px 0;
+}
+
+/* ---------- گرید مرور دسته‌ها ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(98px, 1fr));
+  gap: 8px;
+}
+
+.grid-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 11px 6px 9px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+}
+
+.grid-item:active {
+  background: var(--surface-2);
+}
+
+.gi-emoji {
+  font-size: 24px;
+}
+
+.gi-name {
+  font-size: 11.5px;
+  text-align: center;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.gi-star {
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 6px;
+  font-size: 10px;
+  font-style: normal;
+}
+
+/* ---------- تب کالاها ---------- */
+.sec {
+  margin-bottom: 22px;
+}
+
+.sec-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.sec-head h2 {
+  margin: 0;
+  font-size: 14.5px;
+}
+
+.sec-count {
+  font-size: 11.5px;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+
+.fav-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(126px, 1fr));
+  gap: 8px;
+}
+
+.fav-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: start;
+}
+
+.fav-card:active {
+  background: var(--surface-2);
+}
+
+.fc-emoji {
+  font-size: 22px;
+}
+
+.fc-name {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.fc-meta {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.cat-group {
+  margin-bottom: 4px;
+}
+
+.cat-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px;
+  border-radius: 12px;
+}
+
+.cat-row:active {
+  background: var(--surface-2);
+}
+
+.cr-emoji {
+  font-size: 20px;
+  flex: none;
+}
+
+.cr-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.cr-name {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag {
+  font-size: 10px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  padding: 2px 7px;
+  border-radius: 999px;
+  margin-inline-start: 6px;
+  flex: none;
+}
+
+.cr-unit {
+  font-size: 11.5px;
+  color: var(--text-3);
+  margin-inline-start: 7px;
+  flex: none;
+}
+
+.star-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  color: var(--text-3);
+  opacity: 0.5;
+  cursor: pointer;
+  flex: none;
+  border-radius: 10px;
+}
+
+.star-btn.on {
+  color: #f5b301;
+  opacity: 1;
+}
+
+/* ---------- تنظیمات ---------- */
+.settings-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+}
+
+.settings-card h2 {
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+
+.theme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.theme-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 14px;
+  border: 1.5px solid var(--line);
+  background: var(--surface-2);
+  cursor: pointer;
+  text-align: start;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.theme-card.on {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.t-preview {
+  position: relative;
+  height: 44px;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.t-preview i {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: 10px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+}
+
+.t-preview.light {
+  background: linear-gradient(#ffffff, #e8edf1);
+}
+.t-preview.light i {
+  background: #ffffff;
+  box-shadow: 0 0 0 1px #d8dee4;
+}
+
+.t-preview.dark {
+  background: linear-gradient(#1c222b, #101318);
+}
+.t-preview.dark i {
+  background: #2a313b;
+}
+
+.t-preview.neon {
+  background: linear-gradient(#251c3a, #120e1d);
+}
+.t-preview.neon i {
+  background: #c084fc;
+  box-shadow: 0 0 12px #c084fc;
+}
+
+.t-preview.amoled {
+  background: #000000;
+}
+.t-preview.amoled i {
+  background: #4ade80;
+}
+
+.t-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.t-desc {
+  font-size: 11px;
+  color: var(--text-2);
+}
+
+.t-check {
+  position: absolute;
+  top: 8px;
+  inset-inline-end: 10px;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 2px;
+  cursor: pointer;
+  font-size: 13.5px;
+}
+
+.switch {
+  position: relative;
+  width: 46px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  flex: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.switch i {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.switch.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch.on i {
+  background: #ffffff;
+  transform: translateX(-18px);
+}
+
+[data-dir='ltr'] .switch.on i {
+  transform: translateX(18px);
+}
+
+.about {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.about b {
+  font-size: 14.5px;
+}
+
+.about p {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+.ver {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-inline-start: 6px;
+}
+
+/* ---------- اسپلش ---------- */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.3s ease;
+}
+
+.splash-hide {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-logo {
+  font-size: 48px;
+}
+
+.splash b {
+  font-size: 18px;
+}
+
+.splash span {
+  font-size: 12px;
+  color: var(--text-2);
+}
+
+/* ---------- خطا (حافظه خراب) ---------- */
+.corrupt {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: var(--bg);
+}
+
+.corrupt-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 24px 20px;
+  max-width: 340px;
+  width: 100%;
+  text-align: center;
+  box-shadow: var(--shadow);
+}
+
+.corrupt-card b {
+  display: block;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+
+.corrupt-card p {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.9;
+  margin: 0 0 16px;
+}
+
+/* ---------- کاهش حرکت ---------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+}
