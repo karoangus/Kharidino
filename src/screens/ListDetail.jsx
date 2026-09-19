@@ -136,7 +136,9 @@ export default function ListDetail({ id }) {
     (s, i) => s + (i.price > 0 ? i.price * i.qty : 0),
     0
   );
-  const shown = state.settings.showPurchased
+  // settings همیشه بعد از پاک‌سازی حافظه وجود دارد؛ این محافظ برای اطمینان است
+  const showPurchased = !!(state.settings && state.settings.showPurchased) ;
+  const shown = showPurchased
     ? list.items
     : list.items.filter((i) => !i.purchased);
 
@@ -224,7 +226,7 @@ export default function ListDetail({ id }) {
         <label className="dp-toggle">
           <input
             type="checkbox"
-            checked={state.settings.showPurchased}
+            checked={showPurchased}
             onChange={(e) =>
               dispatch({ type: 'SET_SHOW_PURCHASED', v: e.target.checked })
             }

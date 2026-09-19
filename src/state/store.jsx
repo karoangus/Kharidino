@@ -9,7 +9,12 @@ import React, {
   useRef,
   useState
 } from 'react';
-import { loadState, saveState } from '../lib/storage.js';
+import {
+  loadState,
+  saveState,
+  normalizeState,
+  DEFAULT_SETTINGS
+} from '../lib/storage.js';
 import { seedState } from '../lib/sample.js';
 import { normKey, uid } from '../lib/utils.js';
 
@@ -28,6 +33,21 @@ function initState() {
   if (stored && !stored.corrupted) return stored;
   if (stored && stored.corrupted) return { ...seedState(), corrupted: true };
   return seedState();
+}
+
+/** هیچ لیستی بدون آرایهٔ items نباشد (مثلاً دادهٔ قدیمی یا فایل پشتیبان ناقص) */
+function withItems(list) {
+  return Array.isArray(list.items) ? list : { ...list, items: [] };
+}
+
+/** تغییر ایمن یک لیست و به‌روزرسانی تاریخ آن */
+function editList(state, listId, fn) {
+  return {
+    ...state,
+    lists: state.lists.map((l) =>
+      l.id === listId ? touch(fn(withItems(l))) : l
+    )
+  };
 }
 
 function touch(list) {
@@ -100,49 +120,28 @@ function reducer(state, a) {
       return { ...state, lists: state.lists.filter((l) => l.id !== a.id) };
     case 'ADD_ITEM':
       return {
-        ...state,
-        lists: state.lists.map((l) =>
-          l.id === a.listId ? withItem(l, a.item) : l
-        ),
+        ...editList(state, a.listId, (l) => withItem(l, a.item)),
         recentItems: pushRecent(state.recentItems, a.item)
       };
     case 'UPDATE_ITEM':
-      return {
-        ...state,
-        lists: state.lists.map((l) =>
-          l.id !== a.listId
-            ? l
-            : touch({
-                ...l,
-                items: l.items.map((it) =>
-                  it.id === a.itemId ? { ...it, ...a.patch } : it
-                )
-              })
+      return editList(state, a.listId, (l) => ({
+        ...l,
+        items: l.items.map((it) =>
+          it.id === a.itemId ? { ...it, ...a.patch } : it
         )
-      };
+      }));
     case 'TOGGLE_ITEM':
-      return {
-        ...state,
-        lists: state.lists.map((l) =>
-          l.id !== a.listId
-            ? l
-            : touch({
-                ...l,
-                items: l.items.map((it) =>
-                  it.id === a.itemId ? { ...it, purchased: !it.purchased } : it
-                )
-              })
+      return editList(state, a.listId, (l) => ({
+        ...l,
+        items: l.items.map((it) =>
+          it.id === a.itemId ? { ...it, purchased: !it.purchased } : it
         )
-      };
+      }));
     case 'DELETE_ITEM':
-      return {
-        ...state,
-        lists: state.lists.map((l) =>
-          l.id !== a.listId
-            ? l
-            : touch({ ...l, items: l.items.filter((it) => it.id !== a.itemId) })
-        )
-      };
+      return editList(state, a.listId, (l) => ({
+        ...l,
+        items: l.items.filter((it) => it.id !== a.itemId)
+      }));
     case 'ADD_FAVORITE':
       if (
         state.favorites.some((f) => normKey(f.name) === normKey(a.fav.name))
@@ -205,12 +204,16 @@ function reducer(state, a) {
     case 'SET_THEME':
       return {
         ...state,
-        settings: { ...state.settings, theme: a.theme }
+        settings: { ...DEFAULT_SETTINGS, ...state.settings, theme: a.theme }
       };
     case 'SET_SHOW_PURCHASED':
       return {
         ...state,
-        settings: { ...state.settings, showPurchased: a.v }
+        settings: {
+          ...DEFAULT_SETTINGS,
+          ...state.settings,
+          showPurchased: a.v
+        }
       };
     case 'CLEAR_SAMPLES':
       return {
@@ -227,20 +230,14 @@ function reducer(state, a) {
         customItems: [],
         recentItems: [],
         sampleListIds: [],
-        settings: state.settings,
+        settings: { ...DEFAULT_SETTINGS, ...state.settings },
         corrupted: false
       };
     case 'IMPORT': {
-      const d = a.data || {};
-      return {
-        lists: Array.isArray(d.lists) ? d.lists : [],
-        favorites: Array.isArray(d.favorites) ? d.favorites : [],
-        customItems: Array.isArray(d.customItems) ? d.customItems : [],
-        recentItems: Array.isArray(d.recentItems) ? d.recentItems : [],
-        sampleListIds: Array.isArray(d.sampleListIds) ? d.sampleListIds : [],
-        settings: { theme: 'light', showPurchased: true, ...(d.settings || {}) },
-        corrupted: false
-      };
+      // فایل پشتیبان هم مثل حافظهٔ دستگاه پاک‌سازی می‌شود
+      const imported = normalizeState(a.data);
+      if (!imported) return state;
+      return imported;
     }
     case 'DISMISS_CORRUPT':
       return { ...state, corrupted: false };

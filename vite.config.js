@@ -44,7 +44,9 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico,json}'],
         navigateFallback: 'index.html',
         clientsClaim: true,
-        skipWaiting: true
+        skipWaiting: true,
+        // کش‌های نسخه‌های قدیمی پاک شوند تا صفحهٔ سفید بعد از به‌روزرسانی پیش نیاید
+        cleanupOutdatedCaches: true
       },
       devOptions: {
         enabled: false
