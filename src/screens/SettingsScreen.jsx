@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { useApp } from '../state/store.jsx';
+import { normalizeState } from '../lib/storage.js';
 import { Switch } from '../components/ui.jsx';
 
 const THEMES = [
@@ -55,8 +56,10 @@ export default function SettingsScreen() {
     file
       .text()
       .then((t) => {
-        const d = JSON.parse(t);
-        if (!d || !Array.isArray(d.lists)) throw new Error('bad file');
+        const parsed = JSON.parse(t);
+        // فایل ناقص یا قدیمی هم پاک‌سازی می‌شود؛ فقط فایل بی‌ربط رد می‌شود
+        const norm = normalizeState(parsed);
+        if (!norm) throw new Error('bad file');
         return confirm({
           title: 'بازیابی داده‌ها',
           message:
@@ -64,7 +67,7 @@ export default function SettingsScreen() {
           confirmText: 'بازیابی'
         }).then((ok) => {
           if (ok) {
-            dispatch({ type: 'IMPORT', data: d });
+            dispatch({ type: 'IMPORT', data: norm });
             toast('بازیابی شد ✓');
           }
         });

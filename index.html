@@ -22,9 +22,163 @@
         }
       } catch (e) {}
     </script>
+    <style>
+      /* صفحهٔ بارگذاری پیش از اجرای React — تا هیچ‌وقت صفحهٔ سفید خالی دیده نشود */
+      .boot {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #f4f6f8;
+        color: #171c21;
+        font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      .boot-logo {
+        font-size: 48px;
+        animation: boot-pulse 1.4s ease-in-out infinite;
+      }
+      .boot b {
+        font-size: 18px;
+      }
+      .boot span {
+        font-size: 12px;
+        color: #5c6670;
+      }
+      html[data-theme='dark'] .boot,
+      html[data-theme='neon'] .boot,
+      html[data-theme='amoled'] .boot {
+        background: #101318;
+        color: #edf0f3;
+      }
+      html[data-theme='dark'] .boot span,
+      html[data-theme='neon'] .boot span,
+      html[data-theme='amoled'] .boot span {
+        color: #a6afba;
+      }
+      .boot-msg {
+        margin-top: 14px;
+        max-width: 320px;
+        font-size: 13px;
+        line-height: 1.9;
+        color: #5c6670;
+      }
+      .boot-msg p {
+        margin: 0 0 12px;
+      }
+      .boot-msg button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        background: #16a34a;
+        cursor: pointer;
+      }
+      @keyframes boot-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.08);
+          opacity: 0.85;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-logo {
+          animation: none;
+        }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- این نشانهٔ بارگذاری با بالا آمدن React جایگزین می‌شود -->
+      <div class="boot" id="boot">
+        <div class="boot-logo" aria-hidden="true">🛒</div>
+        <b>خریدینو</b>
+        <span>در حال آماده‌سازی…</span>
+        <div class="boot-msg" id="boot-msg" hidden>
+          <p>
+            برنامه بالا نیامد. اگر قبلاً نسخهٔ قدیمی خریدینو را باز کرده‌ای،
+            دکمهٔ زیر نسخهٔ ذخیره‌شده را پاک می‌کند و از نو بارگذاری می‌شود.
+          </p>
+          <button type="button" id="boot-retry">بارگذاری دوباره</button>
+        </div>
+      </div>
+    </div>
+    <noscript>
+      <p style="font-family: sans-serif; padding: 24px; text-align: center">
+        برای استفاده از خریدینو، جاوااسکریپت مرورگر را روشن کن.
+      </p>
+    </noscript>
+    <script>
+      // نگهبان: اگر برنامه در چند ثانیه بالا نیامد، پیام و راه‌حل نشان بده
+      (function () {
+        window.__kharidinoMounted = false;
+        var msg = document.getElementById('boot-msg');
+        var retry = document.getElementById('boot-retry');
+        var reloading = false;
+
+        function go() {
+          if (reloading) return;
+          reloading = true;
+          location.reload();
+        }
+
+        try {
+          setTimeout(function () {
+            if (!window.__kharidinoMounted && msg) msg.hidden = false;
+          }, 7000);
+        } catch (e) {}
+
+        if (retry) {
+          retry.addEventListener('click', function () {
+            var tasks = [];
+            try {
+              if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                tasks.push(
+                  navigator.serviceWorker.getRegistrations().then(function (rs) {
+                    return Promise.all(
+                      rs.map(function (r) {
+                        return r.unregister();
+                      })
+                    );
+                  })
+                );
+              }
+            } catch (e) {}
+            try {
+              if (typeof caches !== 'undefined' && caches.keys) {
+                tasks.push(
+                  caches.keys().then(function (keys) {
+                    return Promise.all(
+                      keys.map(function (k) {
+                        return caches.delete(k);
+                      })
+                    );
+                  })
+                );
+              }
+            } catch (e) {}
+            try {
+              Promise.all(tasks).catch(function () {}).then(go);
+            } catch (e) {
+              go();
+            }
+            setTimeout(go, 2500);
+          });
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
