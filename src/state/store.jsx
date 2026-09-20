@@ -16,6 +16,7 @@ import {
   DEFAULT_SETTINGS
 } from '../lib/storage.js';
 import { seedState } from '../lib/sample.js';
+import { addFavorite } from '../lib/merge.js';
 import { normKey, uid } from '../lib/utils.js';
 
 const Ctx = createContext(null);
@@ -142,15 +143,13 @@ function reducer(state, a) {
         ...l,
         items: l.items.filter((it) => it.id !== a.itemId)
       }));
-    case 'ADD_FAVORITE':
-      if (
-        state.favorites.some((f) => normKey(f.name) === normKey(a.fav.name))
-      )
-        return state;
-      return {
-        ...state,
-        favorites: [{ id: uid(), qty: 1, price: 0, note: '', ...a.fav }]
-      };
+    case 'ADD_FAVORITE': {
+      // رفع باگ: آیتم جدید به «کالاهای من» اضافه می‌شود، نه اینکه جای
+      // کالاهای ستاره‌دار قبلی را بگیرد
+      const favorites = addFavorite(state.favorites, a.fav);
+      if (favorites === state.favorites) return state;
+      return { ...state, favorites };
+    }
     case 'UPDATE_FAVORITE':
       return {
         ...state,
@@ -195,12 +194,43 @@ function reducer(state, a) {
         )
       )
         return state;
-      return { ...state, customItems: [a.item, ...state.customItems] };
+      return {
+        ...state,
+        customItems: [{ qty: 1, ...a.item }, ...state.customItems]
+      };
+    case 'UPDATE_CUSTOM':
+      // ویرایش مستقیم کالای شخصی
+      return {
+        ...state,
+        customItems: state.customItems.map((c) =>
+          c.id === a.id ? { ...c, ...a.patch } : c
+        )
+      };
     case 'DELETE_CUSTOM':
       return {
         ...state,
         customItems: state.customItems.filter((c) => c.id !== a.id)
       };
+    case 'SET_CATALOG_OVERRIDE':
+      // نسخهٔ شخصی‌شدهٔ یک کالای پیش‌فرض؛ فایل کاتالوگ دست‌نخورده می‌ماند
+      return {
+        ...state,
+        catalogOverrides: {
+          ...(state.catalogOverrides || {}),
+          [a.key]: {
+            ...((state.catalogOverrides || {})[a.key] || {}),
+            ...a.patch,
+            updatedAt: Date.now()
+          }
+        }
+      };
+    case 'CLEAR_CATALOG_OVERRIDE': {
+      const prev = state.catalogOverrides || {};
+      if (!(a.key in prev)) return state;
+      const catalogOverrides = { ...prev };
+      delete catalogOverrides[a.key];
+      return { ...state, catalogOverrides };
+    }
     case 'SET_THEME':
       return {
         ...state,
@@ -228,6 +258,7 @@ function reducer(state, a) {
         lists: [],
         favorites: [],
         customItems: [],
+        catalogOverrides: {},
         recentItems: [],
         sampleListIds: [],
         settings: { ...DEFAULT_SETTINGS, ...state.settings },

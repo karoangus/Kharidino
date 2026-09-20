@@ -24,7 +24,9 @@ export default function ItemEditSheet({ listId, itemId, preset, onClose }) {
   const [emoji, setEmoji] = useState(existing?.emoji || preset?.emoji || '📦');
   const [unit, setUnit] = useState(existing?.unit || preset?.unit || 'عدد');
   const [cat, setCat] = useState(existing?.cat || preset?.cat || 'other');
-  const [qty, setQty] = useState(String(existing?.qty || preset?.qty || 1));
+  const [qty, setQty] = useState(
+    String(existing?.qty || preset?.qty || preset?.defQty || 1)
+  );
   const [price, setPrice] = useState(
     existing && existing.price > 0
       ? String(existing.price)
