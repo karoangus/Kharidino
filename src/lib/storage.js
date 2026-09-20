@@ -90,8 +90,37 @@ function normCustom(raw, i) {
     name: str(c.name, 'کالای بدون نام'),
     emoji: str(c.emoji, '📦'),
     unit: str(c.unit, 'عدد'),
-    cat: str(c.cat, 'other')
+    cat: str(c.cat, 'other'),
+    qty: toInt(c.qty, { fallback: 1, min: 1, max: 999 })
   };
+}
+
+function normOverrideEntry(raw) {
+  const o = isObj(raw) ? raw : {};
+  return {
+    name: str(o.name, ''),
+    emoji: str(o.emoji, '📦'),
+    unit: str(o.unit, 'عدد'),
+    cat: str(o.cat, 'other'),
+    qty: toInt(o.qty, { fallback: 1, min: 1, max: 999 }),
+    updatedAt: toInt(o.updatedAt, { fallback: Date.now() })
+  };
+}
+
+/**
+ * نسخه‌های شخصی‌شدهٔ کالاهای پیش‌فرض (Override).
+ * کلید هر رکورد، نام اصلی کالای کاتالوگ است و رکورد بدون نام دور ریخته می‌شود.
+ */
+function normOverrides(raw) {
+  if (!isObj(raw)) return {};
+  const out = {};
+  for (const [key, value] of Object.entries(raw)) {
+    if (typeof key !== 'string' || !key) continue;
+    const o = normOverrideEntry(value);
+    if (!o.name) continue;
+    out[key] = o;
+  }
+  return out;
 }
 
 function normRecent(raw) {
@@ -109,6 +138,7 @@ const KNOWN_KEYS = [
   'lists',
   'favorites',
   'customItems',
+  'catalogOverrides',
   'recentItems',
   'sampleListIds',
   'settings'
@@ -126,6 +156,8 @@ export function normalizeState(raw) {
     lists: asArr(raw.lists).map(normList),
     favorites: asArr(raw.favorites).map(normFavorite),
     customItems: asArr(raw.customItems).map(normCustom),
+    // دادهٔ قدیمی/فایل پشتیبان بدون این کلید هم سالم خوانده می‌شود
+    catalogOverrides: normOverrides(raw.catalogOverrides),
     recentItems: asArr(raw.recentItems)
       .map(normRecent)
       .filter((r) => r.name),

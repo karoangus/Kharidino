@@ -1,5 +1,7 @@
 // دسته‌بندی‌های پیش‌فرض و فهرست کالاهای آمادهٔ برنامه
 
+import { normKey } from './utils.js';
+
 export const CATEGORIES = [
   { id: 'supermarket', name: 'سوپرمارکت', emoji: '🛒' },
   { id: 'produce', name: 'میوه و سبزیجات', emoji: '🍎' },
@@ -141,3 +143,27 @@ export const ITEM_EMOJIS = [
 export const LIST_EMOJIS = [
   '🛒', '🧺', '🎉', '🎂', '🏠', '🏥', '📦', '🍔', '☕', '🐾', '🎓', '💼'
 ];
+
+// ---------- شخصی‌سازی کالاهای پیش‌فرض (Override محلی) ----------
+//
+// فایل کاتالوگ پیش‌فرض هرگز تغییر نمی‌کند؛ اگر کاربر یک کالای پیش‌فرض را
+// ویرایش کند، نسخهٔ شخصی‌شده در state/localStorage ذخیره می‌شود و همان
+// نسخه در همهٔ جاهایی که مشخصات کالای کاتالوگ استفاده می‌شود ترجیح دارد.
+
+/** کلید ذخیرهٔ Override هر کالای پیش‌فرض: بر پایهٔ نام اصلی کاتالوگ */
+export const overrideKey = (name) => normKey(name);
+
+/**
+ * کالاهای پیش‌فرض به‌همراه نسخهٔ شخصی‌شدهٔ کاربر.
+ * هر آیتم همیشه `ovKey` (کلید اصلی) و `overridden` را دارد تا بتوان
+ * تشخیص داد کاربر آن را ویرایش کرده یا نه.
+ */
+export function personalizedBuiltins(overrides) {
+  const ov = overrides && typeof overrides === 'object' ? overrides : {};
+  return BUILTIN_ITEMS.map((b) => {
+    const key = overrideKey(b.name);
+    const o = ov[key];
+    const base = { ...b, ovKey: key, defaultName: b.name, overridden: !!o };
+    return o ? { ...base, ...o, ovKey: key, defaultName: b.name, overridden: true } : base;
+  });
+}

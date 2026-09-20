@@ -1,36 +1,49 @@
-// تب «کالاها»: کالاهای من ⭐ + فهرست کامل کالاها (قابل جست‌وجو و توسعه)
+// تب «کالاها»: کالاهای من ⭐ + فهرست کامل کالاها (قابل جست‌وجو، ویرایش و توسعه)
 
 import React, { useMemo, useState } from 'react';
 import { useApp } from '../state/store.jsx';
-import { BUILTIN_ITEMS, CATEGORIES } from '../lib/catalog.js';
+import { CATEGORIES, personalizedBuiltins } from '../lib/catalog.js';
 import { faMoney, faNum, normKey } from '../lib/utils.js';
 import { Fab, EmptyState } from '../components/ui.jsx';
 import FavoriteSheet from './FavoriteSheet.jsx';
 import NewCatalogItemSheet from './NewCatalogItemSheet.jsx';
+import CatalogItemSheet from './CatalogItemSheet.jsx';
 
 export default function ItemsScreen() {
   const { state, dispatch, confirm, toast } = useApp();
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('all');
   const [favFor, setFavFor] = useState(null);
+  const [editItem, setEditItem] = useState(null);
   const [customOpen, setCustomOpen] = useState(false);
 
-  // فهرست واحد: کالاهای من ⭐ + شخصی + پیش‌فرض
+  // فهرست واحد: کالاهای من ⭐ + شخصی + پیش‌فرض (با نسخهٔ شخصی‌شدهٔ کاربر)
   const catalog = useMemo(() => {
     const map = new Map();
     for (const f of state.favorites) {
-      map.set(normKey(f.name), { ...f, src: 'fav' });
+      map.set(normKey(f.name), {
+        ...f,
+        src: 'fav',
+        defQty: f.qty > 0 ? f.qty : 1
+      });
     }
     for (const c of state.customItems) {
       const k = normKey(c.name);
-      if (!map.has(k)) map.set(k, { ...c, src: 'custom' });
+      if (!map.has(k))
+        map.set(k, { ...c, src: 'custom', defQty: c.qty > 0 ? c.qty : 1 });
     }
-    for (const b of BUILTIN_ITEMS) {
+    for (const b of personalizedBuiltins(state.catalogOverrides)) {
+      // اگر کاربر نسخهٔ شخصی‌شده را تغییر نام داده، همان نام ملاک است
       const k = normKey(b.name);
-      if (!map.has(k)) map.set(k, { ...b, src: 'builtin' });
+      if (!map.has(k))
+        map.set(k, {
+          ...b,
+          src: 'builtin',
+          defQty: b.qty > 0 ? b.qty : b.overridden ? 1 : 0
+        });
     }
     return [...map.values()];
-  }, [state.favorites, state.customItems]);
+  }, [state.favorites, state.customItems, state.catalogOverrides]);
 
   const keyQ = normKey(q);
 
@@ -49,6 +62,12 @@ export default function ItemsScreen() {
   const isFavOf = (s) =>
     state.favorites.some((f) => normKey(f.name) === normKey(s.name));
 
+  // لمس ردیف = پنجرهٔ ویرایش · کالاهای «کالاهای من» با شیت خودشان ویرایش می‌شوند
+  function openEdit(s) {
+    if (s.src === 'fav') setFavFor(s.id);
+    else setEditItem(s);
+  }
+
   function toggleFav(s) {
     const ex = state.favorites.find((f) => normKey(f.name) === normKey(s.name));
     if (ex) {
@@ -59,9 +78,10 @@ export default function ItemsScreen() {
         type: 'ADD_FAVORITE',
         fav: {
           name: s.name,
-          emoji: s.emoji,
-          unit: s.unit,
-          cat: s.cat || 'other'
+          emoji: s.emoji || '📦',
+          unit: s.unit || 'عدد',
+          cat: s.cat || 'other',
+          qty: s.defQty > 0 ? s.defQty : 1
         }
       });
       toast('به کالاهای من اضافه شد ⭐');
@@ -197,18 +217,41 @@ export default function ItemsScreen() {
                 {items.map((s) => {
                   const fav = isFavOf(s);
                   return (
-                    <div className="cat-row" key={s.name}>
+                    <div
+                      className="cat-row"
+                      key={s.name}
+                      role="button"
+                      tabIndex={0}
+                      title="ویرایش کالا"
+                      onClick={() => openEdit(s)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openEdit(s);
+                        }
+                      }}
+                    >
                       <span className="cr-emoji" aria-hidden="true">
                         {s.emoji}
                       </span>
                       <div className="cr-main">
                         <span className="cr-name">{s.name}</span>
                         {s.src === 'custom' && <span className="tag">شخصی</span>}
-                        <span className="cr-unit">{s.unit}</span>
+                        {s.src === 'builtin' && s.overridden && (
+                          <span className="tag">شخصی‌شده</span>
+                        )}
+                        <span className="cr-unit">
+                          {s.defQty > 0
+                            ? `${faNum(s.defQty)} ${s.unit}`
+                            : s.unit}
+                        </span>
                       </div>
                       <button
                         className={`star-btn ${fav ? 'on' : ''}`}
-                        onClick={() => toggleFav(s)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFav(s);
+                        }}
                         aria-label={
                           fav ? 'حذف از کالاهای من' : 'افزودن به کالاهای من'
                         }
@@ -219,7 +262,10 @@ export default function ItemsScreen() {
                       {s.src === 'custom' && (
                         <button
                           className="icon-btn sm"
-                          onClick={() => delCustom(s)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            delCustom(s);
+                          }}
                           aria-label="حذف کالا"
                         >
                           🗑
@@ -237,6 +283,9 @@ export default function ItemsScreen() {
       <Fab label="کالای جدید" onClick={() => setCustomOpen(true)} />
 
       {favFor && <FavoriteSheet id={favFor} onClose={() => setFavFor(null)} />}
+      {editItem && (
+        <CatalogItemSheet item={editItem} onClose={() => setEditItem(null)} />
+      )}
       {customOpen && (
         <NewCatalogItemSheet onClose={() => setCustomOpen(false)} />
       )}

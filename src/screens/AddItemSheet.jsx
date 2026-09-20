@@ -2,11 +2,19 @@
 
 import React, { useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/store.jsx';
-import { BUILTIN_ITEMS, CATEGORIES, catById } from '../lib/catalog.js';
+import { CATEGORIES, catById, personalizedBuiltins } from '../lib/catalog.js';
 import { faNum, normKey } from '../lib/utils.js';
 import Sheet from '../components/Sheet.jsx';
 import { EmptyState } from '../components/ui.jsx';
 import ItemEditSheet from './ItemEditSheet.jsx';
+
+/** مقدار پیش‌فرض کالا: اول مقدار شخصی‌شده، بعد مقدار کالای من، در غیر این صورت ۱ */
+function defQtyOf(s, fav) {
+  const d = Number(s && s.defQty);
+  if (Number.isFinite(d) && d > 0) return Math.min(Math.round(d), 999);
+  const f = Number(fav && fav.qty);
+  return Number.isFinite(f) && f > 0 ? Math.min(Math.round(f), 999) : 1;
+}
 
 export default function AddItemSheet({ listId, onClose }) {
   const { state, dispatch, toast } = useApp();
@@ -26,19 +34,21 @@ export default function AddItemSheet({ listId, onClose }) {
         unit: f.unit,
         cat: f.cat,
         isFav: true,
-        fav: f
+        fav: f,
+        defQty: f.qty
       });
     }
     for (const c of state.customItems) {
       const k = normKey(c.name);
-      if (!map.has(k)) map.set(k, { ...c, isFav: false });
+      if (!map.has(k)) map.set(k, { ...c, isFav: false, defQty: c.qty });
     }
-    for (const b of BUILTIN_ITEMS) {
+    // کالاهای پیش‌فرض با نسخهٔ شخصی‌شدهٔ کاربر (Override)
+    for (const b of personalizedBuiltins(state.catalogOverrides)) {
       const k = normKey(b.name);
-      if (!map.has(k)) map.set(k, { ...b, isFav: false });
+      if (!map.has(k)) map.set(k, { ...b, isFav: false, defQty: b.qty });
     }
     return [...map.values()];
-  }, [state.favorites, state.customItems]);
+  }, [state.favorites, state.customItems, state.catalogOverrides]);
 
   const keyQ = normKey(q);
 
@@ -70,7 +80,8 @@ export default function AddItemSheet({ listId, onClose }) {
     };
     list.items.forEach(push);
     state.recentItems.forEach(push);
-    state.favorites.forEach(push);
+    // کالاهای من ⭐ با مقدار پیش‌فرض خودشان پیشنهاد می‌شوند
+    state.favorites.forEach((f) => push({ ...f, defQty: f.qty }));
     return out.slice(0, 10);
   }, [list, state.recentItems, state.favorites]);
 
@@ -93,7 +104,8 @@ export default function AddItemSheet({ listId, onClose }) {
       emoji: s.emoji || '📦',
       unit: s.unit || 'عدد',
       cat: s.cat || 'other',
-      qty: fav ? Math.max(1, fav.qty || 1) : 1,
+      // مقدار پیش‌فرض کالای کاتالوگ (کالاهای من / شخصی / شخصی‌شده)
+      qty: defQtyOf(s, fav),
       price: fav && fav.price > 0 ? fav.price : 0,
       note: fav ? fav.note || '' : ''
     };
