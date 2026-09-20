@@ -7,7 +7,6 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# مجوزهای لازم برای ساخت، آپلود artifact و push به شاخه gh-pages
 permissions:
   contents: write
   pages: write
@@ -30,10 +29,14 @@ jobs:
       - name: Build production bundle
         run: PAGES_BASE=/Kharidino/ npm run build
       - run: npm test
+
+      # 1) Deploy از طریق Actions artifact (برای حالتی که Pages منبعش Actions باشد)
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: dist
+
+      # 2) Push به شاخه gh-pages (برای حالتی که Pages منبعش branch باشد)
       - name: Deploy to gh-pages branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
@@ -42,26 +45,7 @@ jobs:
           publish_dir: ./dist
           publish_branch: gh-pages
           force_orphan: true
-      - name: Request Pages build of gh-pages
-        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          echo "Switching Pages source to gh-pages branch (if needed)..."
-          http_code=$(curl -sS -o /tmp/put.json -w "%{http_code}" -X PUT \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" \
-            -d '{"source":{"branch":"gh-pages","path":"/"}}' || echo 000)
-          echo "PUT /pages -> HTTP $http_code"
-          [ -f /tmp/put.json ] && cat /tmp/put.json && echo
-          echo "Requesting a fresh Pages build..."
-          http_code=$(curl -sS -o /tmp/post.json -w "%{http_code}" -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages/builds" || echo 000)
-          echo "POST /pages/builds -> HTTP $http_code"
-          [ -f /tmp/post.json ] && cat /tmp/post.json && echo
+          enable_jekyll: false
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
