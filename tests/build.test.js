@@ -4,16 +4,31 @@ import test from 'node:test';
 
 const read = (path) => readFile(new URL(`../dist/${path}`, import.meta.url), 'utf8');
 
+const PAGES_BASE = '/Kharidino/';
+
 // Pages hosts the app below /Kharidino/, not at the origin root.
 test('production HTML loads compiled assets inside the deployment subpath', async () => {
   const html = await read('index.html');
   assert.doesNotMatch(html, /\/src\/main\.jsx/);
+  // ورودی توسعه باید به مسیر نسبی تبدیل شده باشد
+  assert.doesNotMatch(html, /src="\/src\/main\.jsx"/);
   const assets = [...html.matchAll(/(?:src|href)="([^" ]+)"/g)].map((m) => m[1]);
   assert.ok(assets.some((url) => /assets\/.*\.js$/.test(url)));
   for (const asset of assets) {
-    const url = new URL(asset, 'https://example.org/Kharidino/');
-    assert.ok(url.pathname.startsWith('/Kharidino/'), asset);
-    await access(new URL(`../dist/${url.pathname.slice('/Kharidino/'.length)}`, import.meta.url));
+    // فایل‌های استاتیک با مسیر relative یا مسیر absolute زیر /Kharidino/
+    if (asset.startsWith('http') || asset.startsWith('#') || asset.startsWith('data:')) continue;
+    let resolved;
+    if (asset.startsWith('/')) {
+      resolved = new URL(asset, 'https://example.org/');
+    } else {
+      resolved = new URL(asset, 'https://example.org' + PAGES_BASE);
+    }
+    assert.ok(
+      resolved.pathname.startsWith(PAGES_BASE) || resolved.pathname === '/' + asset.split('?')[0],
+      `asset ${asset} resolves outside ${PAGES_BASE}: ${resolved.pathname}`
+    );
+    const localPath = resolved.pathname.replace(/^\/Kharidino\//, '').replace(/^\//, '');
+    await access(new URL(`../dist/${localPath}`, import.meta.url));
   }
 });
 
@@ -38,4 +53,8 @@ test('install manifest and icons work at the Pages subpath', async () => {
     assert.ok(!icon.src.startsWith('/'));
     await access(new URL(`../dist/${icon.src}`, import.meta.url));
   }
+});
+
+test('.nojekyll marker is emitted so Pages does not skip files starting with underscore', async () => {
+  await access(new URL('../dist/.nojekyll', import.meta.url));
 });
