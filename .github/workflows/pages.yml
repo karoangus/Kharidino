@@ -19,6 +19,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      commit_sha: ${{ steps.build-commit.outputs.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,13 +32,13 @@ jobs:
         run: PAGES_BASE=/Kharidino/ npm run build
       - run: npm test
 
-      # الف) استقرار از طریق Actions
+      # الف) استقرار از طریق Actions (برای حالت Pages Source = GitHub Actions)
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: dist
 
-      # ب) استقرار به شاخه gh-pages
+      # ب) استقرار به شاخه gh-pages (برای حالت Pages Source = Branch → gh-pages)
       - name: Deploy to gh-pages branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
@@ -47,40 +49,55 @@ jobs:
           force_orphan: true
           enable_jekyll: false
 
-      # ج) انتشار خروجی build روی شاخه main در ریشه (برای حالت legacy Pages)
+      # ج) از آن‌جا که در حال حاضر Pages در حالت legacy (Source = Branch → main, /)
+      # تنظیم شده و GITHUB_TOKEN دسترسی عوض‌کردن تنظیمات را ندارد، خروجی build
+      # را به صورت یک commit مستقل با [skip ci] روی main پوش می‌کنیم.
+      # این commit تنها فایل‌های build را تغییر می‌دهد (با کمک یک worktree از
+      # شاخه اصلی + cp فایل‌های dist) و فایل‌های سورس (src/, tests/, ...)
+      # را overwrite نمی‌کند.
       - name: Publish built output to main root (legacy Pages)
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        id: build-commit
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         shell: bash
         run: |
           set -e
-          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" /tmp/pages-deploy \
-            --branch main --depth 5
-          cd /tmp/pages-deploy
+          # یک worktree موقت روی commit فعلی main می‌سازیم
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # کپی فایل‌های build از workspace
+          WORK=/tmp/pages-root
+          rm -rf "$WORK"
+          mkdir -p "$WORK"
+          # clone کم‌عمق از main
+          git clone --depth 1 "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$WORK" --branch main
+          cd "$WORK"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # ابتدا فایل‌های build قبلی را پاک می‌کنیم تا hash قدیمی‌ها نمانند
+          rm -f ./index.html ./manifest.webmanifest ./sw.js ./workbox-*.js
+          rm -rf ./assets
+          # سپس فایل‌های build جدید را می‌نشانیم
           cp -f "$GITHUB_WORKSPACE/dist/index.html" ./index.html
           if [ -f "$GITHUB_WORKSPACE/dist/manifest.webmanifest" ]; then
             cp -f "$GITHUB_WORKSPACE/dist/manifest.webmanifest" ./manifest.webmanifest
           fi
           cp -f "$GITHUB_WORKSPACE/dist/sw.js" ./sw.js
-          find "$GITHUB_WORKSPACE/dist" -maxdepth 1 -name 'workbox-*.js' -exec cp -f {} ./ \;
+          for f in "$GITHUB_WORKSPACE"/dist/workbox-*.js; do
+            [ -e "$f" ] && cp -f "$f" ./
+          done
           cp -f "$GITHUB_WORKSPACE/dist/.nojekyll" ./.nojekyll
-          # assets/ را کامل جایگزین کن
-          rm -rf assets
           cp -r "$GITHUB_WORKSPACE/dist/assets" ./assets
-          # آیکون‌ها در dist/icons هستند؛ روی icons/ ریشه overwrite می‌شوند
-          mkdir -p icons
-          cp -f "$GITHUB_WORKSPACE"/dist/icons/*.png ./icons/ || true
-          git add -f index.html manifest.webmanifest sw.js .nojekyll assets icons workbox-*.js
+          git add -f index.html manifest.webmanifest sw.js .nojekyll assets workbox-*.js
+          # مطمئن شویم فایل‌های build از قبل موجود نباشند
           if git diff --cached --quiet; then
-            echo "No changes to commit."
+            echo "No changes to commit (already up to date)."
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           git commit -m "chore(pages): deploy built output [skip ci]"
           git push origin main
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
