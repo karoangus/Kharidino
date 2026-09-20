@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="description" content="خریدینو — اپلیکیشن مدیریت لیست خرید؛ خریدت رو ساده کن." />
+    <meta name="theme-color" content="#16a34a" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="خریدینو" />
+    <!-- برای جلوگیری از پردازش Jekyll روی گیت‌هاب‌پیجز (در صورت استقرار از شاخه) -->
+    <link rel="icon" href="/Kharidino/assets/icon-192-BceEOA-9.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/Kharidino/assets/apple-180-B6ClvI37.png" />
+    <title>خریدینو — خریدت رو ساده کن</title>
+    <script>
+      // اعمال تم ذخیره‌شده پیش از رندر (جلوگیری از جرقهٔ رنگ)
+      try {
+        var s = JSON.parse(localStorage.getItem('kharidino.v1'));
+        var t = s && s.settings && s.settings.theme;
+        if (t === 'light' || t === 'dark' || t === 'neon' || t === 'amoled') {
+          document.documentElement.dataset.theme = t;
+        }
+      } catch (e) {}
+    </script>
+    <style>
+      /* صفحهٔ بارگذاری پیش از اجرای React — تا هیچ‌وقت صفحهٔ سفید خالی دیده نشود */
+      .boot {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: #f4f6f8;
+        color: #171c21;
+        font-family: 'Vazirmatn', system-ui, -apple-system, 'Segoe UI', sans-serif;
+        text-align: center;
+        padding: 24px;
+      }
+      .boot-logo {
+        font-size: 48px;
+        animation: boot-pulse 1.4s ease-in-out infinite;
+      }
+      .boot b {
+        font-size: 18px;
+      }
+      .boot span {
+        font-size: 12px;
+        color: #5c6670;
+      }
+      html[data-theme='dark'] .boot,
+      html[data-theme='neon'] .boot,
+      html[data-theme='amoled'] .boot {
+        background: #101318;
+        color: #edf0f3;
+      }
+      html[data-theme='dark'] .boot span,
+      html[data-theme='neon'] .boot span,
+      html[data-theme='amoled'] .boot span {
+        color: #a6afba;
+      }
+      .boot-msg {
+        margin-top: 14px;
+        max-width: 340px;
+        font-size: 13px;
+        line-height: 1.9;
+        color: #5c6670;
+      }
+      .boot-msg p {
+        margin: 0 0 12px;
+      }
+      .boot-msg .boot-err {
+        margin-top: 8px;
+        font-size: 11px;
+        direction: ltr;
+        unicode-bidi: plaintext;
+        text-align: center;
+        color: #b45454;
+        word-break: break-all;
+      }
+      .boot-msg button {
+        border: none;
+        border-radius: 12px;
+        padding: 12px 16px;
+        font-family: inherit;
+        font-size: 14px;
+        font-weight: 700;
+        color: #fff;
+        background: #16a34a;
+        cursor: pointer;
+      }
+      @keyframes boot-pulse {
+        0%,
+        100% {
+          transform: scale(1);
+          opacity: 1;
+        }
+        50% {
+          transform: scale(1.08);
+          opacity: 0.85;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .boot-logo {
+          animation: none;
+        }
+      }
+    </style>
+    <script type="module" crossorigin src="/Kharidino/assets/index-P5AJ-wGl.js"></script>
+    <link rel="stylesheet" crossorigin href="/Kharidino/assets/index-e-dpB3m7.css">
+  <link rel="manifest" href="/Kharidino/manifest.webmanifest"></head>
+  <body>
+    <div id="root">
+      <!-- این نشانهٔ بارگذاری با بالا آمدن React جایگزین می‌شود -->
+      <div class="boot" id="boot">
+        <div class="boot-logo" aria-hidden="true">🛒</div>
+        <b>خریدینو</b>
+        <span>در حال آماده‌سازی…</span>
+        <div class="boot-msg" id="boot-msg" hidden>
+          <p>
+            برنامه بالا نیامد. اگر قبلاً نسخهٔ قدیمی خریدینو را باز کرده‌ای،
+            دکمهٔ زیر نسخهٔ ذخیره‌شده را پاک می‌کند و از نو بارگذاری می‌شود.
+          </p>
+          <p class="boot-err" id="boot-err"></p>
+          <button type="button" id="boot-retry">بارگذاری دوباره</button>
+        </div>
+      </div>
+    </div>
+    <noscript>
+      <p style="font-family: sans-serif; padding: 24px; text-align: center">
+        برای استفاده از خریدینو، جاوااسکریپت مرورگر را روشن کن.
+      </p>
+    </noscript>
+    <script>
+      // نگهبان: اگر برنامه در چند ثانیه بالا نیامد، پیام و راه‌حل نشان بده
+      (function () {
+        window.__kharidinoMounted = false;
+        var BOOT_VERSION = '2026-09-20-ghpages-fix';
+        var msg = document.getElementById('boot-msg');
+        var errBox = document.getElementById('boot-err');
+        var retry = document.getElementById('boot-retry');
+        var reloading = false;
+        var bootError = null;
+
+        function showError(e) {
+          bootError = e && (e.message || String(e));
+          if (errBox && bootError) errBox.textContent = bootError;
+          if (msg) msg.hidden = false;
+        }
+
+        // گرفتن خطاهای سراسری (مثلاً بار نشدن اسکریپت به‌دلیل کش قدیمی)
+        window.addEventListener('error', function (ev) {
+          if (window.__kharidinoMounted) return;
+          showError(ev.error || ev.message || (ev.target && ('failed to load ' + (ev.target.src || ev.target.href))));
+        }, true);
+        window.addEventListener('unhandledrejection', function (ev) {
+          if (window.__kharidinoMounted) return;
+          showError(ev.reason);
+        });
+
+        // اگر نسخه‌ای که قبلاً بالا آمد با نسخهٔ فعلی فرق دارد، کش SW را یک‌بار خودکار پاک می‌کنیم
+        try {
+          var PREV_KEY = 'kharidino.boot.v';
+          var prev = localStorage.getItem(PREV_KEY);
+          if (prev && prev !== BOOT_VERSION) {
+            // نسخهٔ جدید؛ پاک کردن سرویس‌ورکر و کش‌های قدیمی
+            (function kickOldSW() {
+              var tasks = [];
+              if ('serviceWorker' in navigator) {
+                tasks.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                  return Promise.all(rs.map(function (r) { return r.unregister(); }));
+                }).catch(function () {}));
+              }
+              if ('caches' in window) {
+                tasks.push(caches.keys().then(function (keys) {
+                  return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                }).catch(function () {}));
+              }
+              Promise.all(tasks).then(function () {
+                localStorage.setItem(PREV_KEY, BOOT_VERSION);
+                location.reload(true);
+              });
+            })();
+          } else {
+            localStorage.setItem(PREV_KEY, BOOT_VERSION);
+          }
+        } catch (e) {}
+
+        function go() {
+          if (reloading) return;
+          reloading = true;
+          location.reload(true);
+        }
+
+        try {
+          setTimeout(function () {
+            if (!window.__kharidinoMounted) showError(bootError || 'timeout loading app');
+          }, 12000);
+        } catch (e) {}
+
+        if (retry) {
+          retry.addEventListener('click', function () {
+            var tasks = [];
+            try {
+              if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
+                tasks.push(
+                  navigator.serviceWorker.getRegistrations().then(function (rs) {
+                    return Promise.all(rs.map(function (r) { return r.unregister(); }));
+                  })
+                );
+              }
+            } catch (e) {}
+            try {
+              if (typeof caches !== 'undefined' && caches.keys) {
+                tasks.push(
+                  caches.keys().then(function (keys) {
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                  })
+                );
+              }
+            } catch (e) {}
+            // پاک کردن نسخه‌های کش شده از localStorage که ممکن است مانع بوت شوند
+            try {
+              Object.keys(localStorage).forEach(function (k) {
+                if (/^workbox:/.test(k)) localStorage.removeItem(k);
+              });
+            } catch (e) {}
+            try {
+              Promise.all(tasks).catch(function () {}).then(go);
+            } catch (e) {
+              go();
+            }
+            setTimeout(go, 2500);
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>
