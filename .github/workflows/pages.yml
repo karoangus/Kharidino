@@ -30,13 +30,13 @@ jobs:
         run: PAGES_BASE=/Kharidino/ npm run build
       - run: npm test
 
-      # الف) استقرار از طریق Actions (اگر Pages در حالت Actions باشد)
+      # الف) استقرار از طریق Actions
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: dist
 
-      # ب) استقرار به شاخه gh-pages (اگر Pages در حالت branch/gh-pages باشد)
+      # ب) استقرار به شاخه gh-pages
       - name: Deploy to gh-pages branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
@@ -47,25 +47,40 @@ jobs:
           force_orphan: true
           enable_jekyll: false
 
-      # ج) از آن‌جا که Pages در حال حاضر به صورت legacy به شاخه اصلی اشاره
-      # می‌کند و توکن GITHUB_TOKEN دسترسی تغییر تنظیمات را ندارد، خروجی build
-      # را روی شاخه main در ریشه منتشر می‌کنیم. این کار با overwrite=false انجام
-      # می‌شود تا فقط فایل‌های build (index.html، assets/، sw.js، manifest و …)
-      # آپدیت شوند و فایل‌های سورس باقی بمانند.
-      - name: Publish built assets to main root (legacy Pages source)
+      # ج) از آن‌جا که Pages در حال حاضر در حالت legacy (source=main, /) تنظیم
+      # شده و GITHUB_TOKEN دسترسی تغییر تنظیمات را ندارد، خروجی build را در
+      # قالب یک commit مستقل با [skip ci] روی شاخه main قرار می‌دهیم. این commit
+      # فایل‌های build را اضافه/آپدیت می‌کند و فایل‌های سورس را نگه می‌دارد.
+      - name: Overlay built assets onto main branch (legacy Pages)
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          publish_branch: main
-          destination_dir: ./
-          force_orphan: false
-          enable_jekyll: false
-          user_name: "github-actions[bot]"
-          user_email: "41898282+github-actions[bot]@users.noreply.github.com"
-          commit_message: "chore(pages): deploy built output [skip ci]"
-          cname: ""
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # کپی خروجی dist به ریشهٔ ریپو
+          cp -r dist/. ./
+          touch .nojekyll
+          git add -f index.html manifest.webmanifest sw.js .nojekyll workbox-*.js
+          # اضافه‌کردن assets و icons
+          for d in assets; do
+            if [ -d "$d" ]; then
+              # پاک‌کردن فایل‌های hash دار قدیمی که در build جدید نیستند
+              git rm -rf --ignore-unmatch "$d" || true
+              git add -f "$d"
+            fi
+          done
+          for f in icons/*.png; do
+            [ -e "$f" ] && git add -f "$f"
+          done
+          if git diff --cached --quiet; then
+            echo "No changes to commit (build already published)."
+            exit 0
+          fi
+          git commit -m "chore(pages): deploy built output [skip ci]"
+          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
