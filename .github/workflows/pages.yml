@@ -30,13 +30,13 @@ jobs:
         run: PAGES_BASE=/Kharidino/ npm run build
       - run: npm test
 
-      # الف) استقرار از طریق Actions
+      # الف) استقرار از طریق Actions (در صورتی که Pages در حالت Actions باشد)
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: dist
 
-      # ب) استقرار به شاخه gh-pages
+      # ب) استقرار به شاخه gh-pages (در صورتی که Pages در حالت branch/gh-pages باشد)
       - name: Deploy to gh-pages branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
@@ -47,40 +47,46 @@ jobs:
           force_orphan: true
           enable_jekyll: false
 
-      # ج) از آن‌جا که Pages در حال حاضر در حالت legacy (source=main, /) تنظیم
-      # شده و GITHUB_TOKEN دسترسی تغییر تنظیمات را ندارد، خروجی build را در
-      # قالب یک commit مستقل با [skip ci] روی شاخه main قرار می‌دهیم. این commit
-      # فایل‌های build را اضافه/آپدیت می‌کند و فایل‌های سورس را نگه می‌دارد.
-      - name: Overlay built assets onto main branch (legacy Pages)
+      # ج) از آن‌جا که در حال حاضر Pages در حالت legacy (source=branch, main, /)
+      # تنظیم شده و GITHUB_TOKEN دسترسی تغییر تنظیمات را ندارد، خروجی build را
+      # در قالب یک commit مستقل (با [skip ci] برای جلوگیری از حلقهٔ بی‌نهایت)
+      # روی شاخهٔ main منتشر می‌کنیم. برای اینکه فایل‌های سورس overwrite نشوند،
+      # در یک کلون جداگانه کار می‌کنیم و فقط فایل‌های build را add می‌کنیم.
+      - name: Publish built output to main root (legacy Pages)
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -e
-          cd "$GITHUB_WORKSPACE"
+          # کلون جداگانه از main تا فایل‌های build را بدون دست‌زدن به سورس اضافه کنیم
+          git clone "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" /tmp/pages-deploy \
+            --branch main --depth 5
+          cd /tmp/pages-deploy
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          # کپی خروجی dist به ریشهٔ ریپو
-          cp -r dist/. ./
-          touch .nojekyll
-          git add -f index.html manifest.webmanifest sw.js .nojekyll workbox-*.js
-          # اضافه‌کردن assets و icons
-          for d in assets; do
-            if [ -d "$d" ]; then
-              # پاک‌کردن فایل‌های hash دار قدیمی که در build جدید نیستند
-              git rm -rf --ignore-unmatch "$d" || true
-              git add -f "$d"
-            fi
+          # کپی خروجی build از workspace به ریشهٔ این کلون
+          cp -f "$GITHUB_WORKSPACE"/dist/index.html ./index.html
+          cp -f "$GITHUB_WORKSPACE"/dist/manifest.webmanifest ./manifest.webmanifest || true
+          cp -f "$GITHUB_WORKSPACE"/dist/sw.js ./sw.js
+          for f in "$GITHUB_WORKSPACE"/dist/workbox-*.js; do
+            [ -e "$f" ] && cp -f "$f" ./
           done
-          for f in icons/*.png; do
-            [ -e "$f" ] && git add -f "$f"
-          done
+          # .nojekyll برای غیرفعال‌کردن پردازش Jekyll
+          cp -f "$GITHUB_WORKSPACE"/dist/.nojekyll ./.nojekyll
+          # assets/ را به طور کامل جایگزین می‌کنیم
+          rm -rf assets
+          cp -r "$GITHUB_WORKSPACE"/dist/assets ./assets
+          # آیکون‌های build را در ریشه قرار می‌دهیم (build در dist/icons دارد
+          # ولی public/icons از قبل روی main هست؛ build آیکون‌ها را تغییر
+          # نمی‌دهد پس overwrite بی‌ضرر است)
+          cp -f "$GITHUB_WORKSPACE"/dist/icons/*.png ./icons/
+          git add -f index.html manifest.webmanifest sw.js .nojekyll assets workbox-*.js
           if git diff --cached --quiet; then
-            echo "No changes to commit (build already published)."
+            echo "No changes to commit."
             exit 0
           fi
           git commit -m "chore(pages): deploy built output [skip ci]"
-          git push "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" HEAD:main
+          git push origin main
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
