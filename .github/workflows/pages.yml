@@ -11,6 +11,8 @@ permissions:
   contents: write
   pages: write
   id-token: write
+  # برای تغییر تنظیمات Pages از داخل workflow لازم است
+  administration: write
 
 concurrency:
   group: pages-${{ github.ref }}
@@ -19,6 +21,8 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      deployed_sha: ${{ steps.ghpages.outputs.deployed_commit_sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,16 +37,41 @@ jobs:
         if: github.event_name != 'pull_request'
         with:
           path: dist
-      # Deploy built output to gh-pages branch so GitHub Pages can serve it
-      # regardless of whether Pages is configured for Actions or branch source.
       - name: Deploy to gh-pages branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        id: ghpages
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./dist
           publish_branch: gh-pages
           force_orphan: true
+
+  # تلاش می‌کنیم منبع Pages را روی شاخهٔ gh-pages ببریم تا از خروجی build
+  # سرو شود، نه فایل‌های خام ریشهٔ main.
+  configure-pages-source:
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Switch Pages source to gh-pages branch
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sS -X PUT \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages" \
+            -d '{"source":{"branch":"gh-pages","path":"/"}}' \
+            -o /tmp/pages.json -w 'HTTP %{http_code}\n' || true
+          cat /tmp/pages.json || true
+          echo "---"
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pages/builds" \
+            -o /tmp/build.json -w 'HTTP %{http_code}\n' || true
+          cat /tmp/build.json || true
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
