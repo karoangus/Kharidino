@@ -9,6 +9,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="خریدینو" />
+    <!-- برای جلوگیری از پردازش Jekyll روی گیت‌هاب‌پیجز (در صورت استقرار از شاخه) -->
     <link rel="icon" href="./icons/icon-192.png" type="image/png" />
     <link rel="apple-touch-icon" href="./icons/apple-180.png" />
     <title>خریدینو — خریدت رو ساده کن</title>
@@ -62,13 +63,22 @@
       }
       .boot-msg {
         margin-top: 14px;
-        max-width: 320px;
+        max-width: 340px;
         font-size: 13px;
         line-height: 1.9;
         color: #5c6670;
       }
       .boot-msg p {
         margin: 0 0 12px;
+      }
+      .boot-msg .boot-err {
+        margin-top: 8px;
+        font-size: 11px;
+        direction: ltr;
+        unicode-bidi: plaintext;
+        text-align: center;
+        color: #b45454;
+        word-break: break-all;
       }
       .boot-msg button {
         border: none;
@@ -111,6 +121,7 @@
             برنامه بالا نیامد. اگر قبلاً نسخهٔ قدیمی خریدینو را باز کرده‌ای،
             دکمهٔ زیر نسخهٔ ذخیره‌شده را پاک می‌کند و از نو بارگذاری می‌شود.
           </p>
+          <p class="boot-err" id="boot-err"></p>
           <button type="button" id="boot-retry">بارگذاری دوباره</button>
         </div>
       </div>
@@ -124,20 +135,67 @@
       // نگهبان: اگر برنامه در چند ثانیه بالا نیامد، پیام و راه‌حل نشان بده
       (function () {
         window.__kharidinoMounted = false;
+        var BOOT_VERSION = '2026-09-20-ghpages-fix';
         var msg = document.getElementById('boot-msg');
+        var errBox = document.getElementById('boot-err');
         var retry = document.getElementById('boot-retry');
         var reloading = false;
+        var bootError = null;
+
+        function showError(e) {
+          bootError = e && (e.message || String(e));
+          if (errBox && bootError) errBox.textContent = bootError;
+          if (msg) msg.hidden = false;
+        }
+
+        // گرفتن خطاهای سراسری (مثلاً بار نشدن اسکریپت به‌دلیل کش قدیمی)
+        window.addEventListener('error', function (ev) {
+          if (window.__kharidinoMounted) return;
+          showError(ev.error || ev.message || (ev.target && ('failed to load ' + (ev.target.src || ev.target.href))));
+        }, true);
+        window.addEventListener('unhandledrejection', function (ev) {
+          if (window.__kharidinoMounted) return;
+          showError(ev.reason);
+        });
+
+        // اگر نسخه‌ای که قبلاً بالا آمد با نسخهٔ فعلی فرق دارد، کش SW را یک‌بار خودکار پاک می‌کنیم
+        try {
+          var PREV_KEY = 'kharidino.boot.v';
+          var prev = localStorage.getItem(PREV_KEY);
+          if (prev && prev !== BOOT_VERSION) {
+            // نسخهٔ جدید؛ پاک کردن سرویس‌ورکر و کش‌های قدیمی
+            (function kickOldSW() {
+              var tasks = [];
+              if ('serviceWorker' in navigator) {
+                tasks.push(navigator.serviceWorker.getRegistrations().then(function (rs) {
+                  return Promise.all(rs.map(function (r) { return r.unregister(); }));
+                }).catch(function () {}));
+              }
+              if ('caches' in window) {
+                tasks.push(caches.keys().then(function (keys) {
+                  return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+                }).catch(function () {}));
+              }
+              Promise.all(tasks).then(function () {
+                localStorage.setItem(PREV_KEY, BOOT_VERSION);
+                location.reload(true);
+              });
+            })();
+          } else {
+            localStorage.setItem(PREV_KEY, BOOT_VERSION);
+          }
+        } catch (e) {}
 
         function go() {
           if (reloading) return;
           reloading = true;
-          location.reload();
+          location.reload(true);
         }
 
         try {
           setTimeout(function () {
-            if (!window.__kharidinoMounted && msg) msg.hidden = false;
-          }, 7000);
+            if (!window.__kharidinoMounted) showError(bootError || 'timeout loading app');
+          }, 12000);
         } catch (e) {}
 
         if (retry) {
@@ -147,11 +205,7 @@
               if (navigator.serviceWorker && navigator.serviceWorker.getRegistrations) {
                 tasks.push(
                   navigator.serviceWorker.getRegistrations().then(function (rs) {
-                    return Promise.all(
-                      rs.map(function (r) {
-                        return r.unregister();
-                      })
-                    );
+                    return Promise.all(rs.map(function (r) { return r.unregister(); }));
                   })
                 );
               }
@@ -160,14 +214,16 @@
               if (typeof caches !== 'undefined' && caches.keys) {
                 tasks.push(
                   caches.keys().then(function (keys) {
-                    return Promise.all(
-                      keys.map(function (k) {
-                        return caches.delete(k);
-                      })
-                    );
+                    return Promise.all(keys.map(function (k) { return caches.delete(k); }));
                   })
                 );
               }
+            } catch (e) {}
+            // پاک کردن نسخه‌های کش شده از localStorage که ممکن است مانع بوت شوند
+            try {
+              Object.keys(localStorage).forEach(function (k) {
+                if (/^workbox:/.test(k)) localStorage.removeItem(k);
+              });
             } catch (e) {}
             try {
               Promise.all(tasks).catch(function () {}).then(go);
@@ -179,6 +235,6 @@
         }
       })();
     </script>
-    <script type="module" src="/src/main.jsx"></script>
+    <script type="module" src="./src/main.jsx"></script>
   </body>
 </html>

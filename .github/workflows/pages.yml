@@ -24,11 +24,23 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: Build production bundle
+        run: PAGES_BASE=/Kharidino/ npm run build
       - run: npm test
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: dist
+      # Also commit dist/ to gh-pages branch so GitHub Pages can serve it
+      # whether Pages is configured for Actions deployment or branch deployment.
+      - name: Deploy to gh-pages branch
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          force_orphan: true
 
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'

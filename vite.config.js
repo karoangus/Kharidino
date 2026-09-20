@@ -2,8 +2,12 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// مسیر پایه روی گیت‌هاب‌پیجز به‌صورت صریح تعریف شده تا هم assetها و هم سرویس‌ورکر
+// زیردامنهٔ صحیح داشته باشند. با PAGES_BASE می‌توان این مقدار را در CI تغییر داد.
+const base = process.env.PAGES_BASE || '/Kharidino/';
+
 export default defineConfig({
-  base: './',
+  base,
   server: {
     host: true,
     allowedHosts: true
@@ -18,7 +22,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['icons/*.png'],
+      includeAssets: ['icons/*.png', '.nojekyll'],
       manifest: {
         id: './',
         name: 'خریدینو — Kharidino',
@@ -42,7 +46,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,woff2,png,svg,ico,json}'],
-        navigateFallback: 'index.html',
+        navigateFallback: null,
         clientsClaim: true,
         skipWaiting: true,
         // کش‌های نسخه‌های قدیمی پاک شوند تا صفحهٔ سفید بعد از به‌روزرسانی پیش نیاید
