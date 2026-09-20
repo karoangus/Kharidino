@@ -21,6 +21,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -30,13 +32,13 @@ jobs:
         run: PAGES_BASE=/Kharidino/ npm run build
       - run: npm test
 
-      # 1) Deploy از طریق Actions artifact (برای حالتی که Pages منبعش Actions باشد)
+      # الف) آماده‌سازی artifact برای Actions Pages
       - uses: actions/upload-pages-artifact@v3
         if: github.event_name != 'pull_request'
         with:
           path: dist
 
-      # 2) Push به شاخه gh-pages (برای حالتی که Pages منبعش branch باشد)
+      # ب) Push به شاخهٔ gh-pages برای حالت Source=Branch → gh-pages
       - name: Deploy to gh-pages branch
         if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
@@ -47,15 +49,46 @@ jobs:
           force_orphan: true
           enable_jekyll: false
 
+      # ج) از آن‌جا که در حال حاضر Pages در حالت legacy (source=branch, main, /)
+      # تنظیم شده و GITHUB_TOKEN دسترسی عوض‌کردن تنظیمات را ندارد، خروجی build
+      # را روی شاخهٔ main در یک کامیت خودکار قرار می‌دهیم تا Pages حتماً نسخهٔ
+      # کامپایل‌شده را سرو کند و نه فایل‌های jsx خام.
+      - name: Commit built dist/ to main root (legacy Pages workaround)
+        if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -e
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          # پاک کردن فایل‌های build قبلی از ریشه (برای جلوگیری از فایل‌های یتیم)
+          for f in index.html manifest.webmanifest sw.js .nojekyll; do
+            if [ -f "$f" ] || [ -e "$f" ]; then git rm -rf --ignore-unmatch "$f"; fi
+          done
+          for f in workbox-*.js; do
+            [ -e "$f" ] && git rm -rf --ignore-unmatch "$f" || true
+          done
+          rm -rf assets || true
+          # کپی خروجی dist به ریشه
+          cp -r dist/. ./
+          # .nojekyll برای غیرفعال‌کردن Jekyll
+          touch .nojekyll
+          # اضافه‌کردن فایل‌های build به git
+          git add -f index.html manifest.webmanifest sw.js .nojekyll assets icons
+          for f in workbox-*.js; do [ -e "$f" ] && git add -f "$f"; done
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          git commit -m "chore(pages): deploy built output [skip ci]"
+          git push origin main
+
   deploy:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/configure-pages@v5
-      - name: Deploy built application
+      - name: Deploy via Actions (fallback)
         id: deployment
         uses: actions/deploy-pages@v4
