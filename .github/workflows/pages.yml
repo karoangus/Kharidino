@@ -65,6 +65,12 @@ jobs:
           cd "$WT"
           # پوشه‌های build قبلی را پاک می‌کنیم
           rm -rf assets workbox-*.js sw.js manifest.webmanifest .nojekyll index.html
+          # این مرحله index.html ریشه را با خروجی build جایگزین می‌کند؛
+          # نسخهٔ سورس (ورودی Vite) برای ساخت بعدی در index.source.html
+          # نگه داشته می‌شود تا build هرگز نشکند.
+          if git show HEAD:index.html 2>/dev/null | grep -q 'src/main\.jsx'; then
+            git show HEAD:index.html > index.source.html
+          fi
           # کپی خروجی dist
           cp -rf "$GITHUB_WORKSPACE"/dist/. ./
           # اطمینان: .nojekyll باشد

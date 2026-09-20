@@ -6,7 +6,10 @@
   "description": "خریدینو — اپلیکیشن PWA مدیریت لیست خرید، فارسی، RTL و آفلاین",
   "scripts": {
     "dev": "vite",
+    "prepare:html": "node scripts/prepare-html.mjs",
+    "predev": "npm run prepare:html",
     "build": "vite build",
+    "prebuild": "npm run prepare:html",
     "preview": "vite preview",
     "test": "npm run build && node --test"
   },
